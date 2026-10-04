@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.urls import reverse
 
 
 class Category(models.Model):
@@ -15,6 +16,12 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductQuerySet(models.QuerySet):
+    def available(self):
+        """Productos visibles en la tienda pública."""
+        return self.filter(is_active=True)
 
 
 class Product(models.Model):
@@ -38,6 +45,8 @@ class Product(models.Model):
     created_at = models.DateTimeField('creado', auto_now_add=True)
     updated_at = models.DateTimeField('actualizado', auto_now=True)
 
+    objects = ProductQuerySet.as_manager()
+
     class Meta:
         verbose_name = 'producto'
         verbose_name_plural = 'productos'
@@ -45,3 +54,6 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('catalog:product_detail', kwargs={'slug': self.slug})

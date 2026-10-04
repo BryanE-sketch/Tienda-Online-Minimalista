@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Ruta de navegación">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}">Productos</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'catalog:product_list' %}?category={{ product.category.slug }}">{{ product.category }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h3">{{ product.name }}</h1>
+        <p class="fs-4 fw-bold mb-2">{{ product.price|floatformat:"2g" }} €</p>
+
+        {% if product.stock > 0 %}
+        <span class="badge text-bg-success mb-3">En stock</span>
+        {% else %}
+        <span class="badge text-bg-secondary mb-3">Agotado</span>
+        {% endif %}
+
+        <p>{{ product.description|default:"Sin descripción."|linebreaksbr }}</p>
+
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Volver al catálogo</a>
+    </div>
+</div>
+{% endblock %}
