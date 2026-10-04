@@ -150,3 +150,6 @@ LOGOUT_REDIRECT_URL = 'catalog:product_list'
 MESSAGE_TAGS = {
     message_constants.ERROR: 'danger',
 }
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'

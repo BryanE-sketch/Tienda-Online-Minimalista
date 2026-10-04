@@ -1,8 +1,10 @@
 from decimal import Decimal
 
-from django.core.validators import MinValueValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
+
+from .validators import validate_image_size
 
 
 class Category(models.Model):
@@ -34,6 +36,16 @@ class Product(models.Model):
     name = models.CharField('nombre', max_length=200)
     slug = models.SlugField('slug', max_length=220, unique=True)
     description = models.TextField('descripción', blank=True)
+    image = models.ImageField(
+        'imagen',
+        upload_to='products/',
+        blank=True,
+        validators=[
+            FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_size,
+        ],
+        help_text='JPG, PNG o WebP, máximo 2 MB.',
+    )
     price = models.DecimalField(
         'precio',
         max_digits=10,

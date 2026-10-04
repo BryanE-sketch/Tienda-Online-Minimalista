@@ -13,36 +13,49 @@
     </ol>
 </nav>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h1 class="h3">{{ product.name }}</h1>
-        <p class="fs-4 fw-bold mb-2">{{ product.price|floatformat:"2g" }} €</p>
+<div class="card shadow-sm overflow-hidden">
+    <div class="row g-0">
+        <div class="col-12 col-md-5">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                 class="w-100 h-100" style="max-height: 420px; object-fit: cover;">
+            {% else %}
+            <div class="bg-secondary-subtle text-muted d-flex align-items-center justify-content-center h-100"
+                 style="min-height: 240px;">Sin imagen</div>
+            {% endif %}
+        </div>
+        <div class="col-12 col-md-7">
+            <div class="card-body">
+                <h1 class="h3">{{ product.name }}</h1>
+                <p class="fs-4 fw-bold mb-2">{{ product.price|floatformat:"2g" }} €</p>
 
-        {% if product.stock > 0 %}
-        <span class="badge text-bg-success mb-3">En stock</span>
-        {% else %}
-        <span class="badge text-bg-secondary mb-3">Agotado</span>
-        {% endif %}
+                {% if product.stock > 0 %}
+                <span class="badge text-bg-success mb-3">En stock</span>
+                {% else %}
+                <span class="badge text-bg-secondary mb-3">Agotado</span>
+                {% endif %}
 
-        <p>{{ product.description|default:"Sin descripción."|linebreaksbr }}</p>
+                <p>{{ product.description|default:"Sin descripción."|linebreaksbr }}</p>
 
-        {% if product.stock > 0 %}
-        <form method="post" action="{% url 'orders:cart_add' product.pk %}"
-              class="row g-2 align-items-end mb-3">
-            {% csrf_token %}
-            <div class="col-auto">
-                <label for="id_quantity" class="form-label">Cantidad</label>
-                <input type="number" name="quantity" id="id_quantity" value="1"
-                       min="1" max="{{ product.stock }}"
-                       class="form-control" style="width: 6rem;">
+                {% if product.stock > 0 %}
+                <form method="post" action="{% url 'orders:cart_add' product.pk %}"
+                      class="row g-2 align-items-end mb-3">
+                    {% csrf_token %}
+                    <div class="col-auto">
+                        <label for="id_quantity" class="form-label">Cantidad</label>
+                        <input type="number" name="quantity" id="id_quantity" value="1"
+                               min="1" max="{{ product.stock }}"
+                               class="form-control" style="width: 6rem;">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-dark">Añadir al carrito</button>
+                    </div>
+                </form>
+                {% endif %}
+
+                <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Volver al catálogo</a>
             </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-dark">Añadir al carrito</button>
-            </div>
-        </form>
-        {% endif %}
-
-        <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Volver al catálogo</a>
+        </div>
     </div>
 </div>
 {% endblock %}
