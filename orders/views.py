@@ -11,11 +11,19 @@ from django.views.generic import DetailView, ListView
 from catalog.models import Product
 
 from .cart import Cart
-from .forms import CartQuantityForm, CheckoutForm, OrderFilterForm, OrderStatusForm
+from .forms import (
+    CartQuantityForm,
+    CheckoutForm,
+    OrderFilterForm,
+    OrderStatusForm,
+    PaymentForm,
+)
 from .models import Order
+from .payments import simulate_payment
 from .services import OrderError, create_order
 
 
+# --- Carrito ---
 
 def cart_detail(request):
     return render(request, 'orders/cart_detail.html')
@@ -67,6 +75,8 @@ def cart_remove(request, product_id):
     return redirect('orders:cart_detail')
 
 
+# --- Compra y pedidos del cliente ---
+
 @login_required
 def checkout(request):
     cart = Cart(request)
@@ -88,12 +98,48 @@ def checkout(request):
                 return redirect('orders:cart_detail')
 
             cart.clear()
-            messages.success(request, f'¡Gracias! Hemos recibido tu pedido #{order.pk}.')
-            return redirect(order)
+            messages.success(
+                request,
+                f'Pedido #{order.pk} creado. Completa el pago para confirmarlo.',
+            )
+            return redirect('orders:order_pay', pk=order.pk)
     else:
         form = CheckoutForm()
 
     return render(request, 'orders/checkout.html', {'form': form})
+
+
+@login_required
+def order_pay(request, pk):
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__product'),
+        pk=pk,
+        user=request.user,
+    )
+    if order.status != Order.Status.PENDING:
+        messages.info(request, 'Este pedido no está pendiente de pago.')
+        return redirect(order)
+
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            result = simulate_payment(form.cleaned_data['card_number'])
+            if result.approved:
+                try:
+                    order.change_status(Order.Status.PAID)
+                except ValidationError as error:
+                    messages.error(request, error.message)
+                else:
+                    messages.success(
+                        request,
+                        f'Pago aprobado. Referencia: {result.reference}.',
+                    )
+                return redirect(order)
+            form.add_error(None, 'El banco ha rechazado la tarjeta. Prueba con otra.')
+    else:
+        form = PaymentForm()
+
+    return render(request, 'orders/order_pay.html', {'order': order, 'form': form})
 
 
 class OrderListView(LoginRequiredMixin, ListView):
@@ -109,7 +155,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user).prefetch_related('items__product')
-    
+
+
+# --- Panel de gestión del personal ---
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Solo el personal: sin sesión va al acceso; un cliente recibe 403."""

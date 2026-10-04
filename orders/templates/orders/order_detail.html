@@ -54,5 +54,10 @@
     </div>
 </div>
 
-<a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary mt-3">Volver a mis pedidos</a>
+<div class="d-flex flex-wrap gap-2 mt-3">
+    <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary">Volver a mis pedidos</a>
+    {% if order.status == 'pending' %}
+    <a href="{% url 'orders:order_pay' order.pk %}" class="btn btn-dark">Pagar ahora</a>
+    {% endif %}
+</div>
 {% endblock %}

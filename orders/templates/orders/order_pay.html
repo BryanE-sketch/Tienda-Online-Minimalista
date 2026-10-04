@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Pagar pedido #{{ order.pk }}{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Pagar pedido #{{ order.pk }}</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Datos de la tarjeta</h2>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include 'includes/form_fields.html' %}
+                    <button type="submit" class="btn btn-dark w-100">
+                        Pagar {{ order.total|floatformat:"2g" }} €
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="alert alert-warning">
+            <strong>Pago simulado.</strong> No se realiza ningún cargo y los datos de la tarjeta no se guardan.
+            <ul class="mb-0 mt-2">
+                <li><code>4242 4242 4242 4242</code>: pago aprobado</li>
+                <li><code>4000 0000 0000 0002</code>: pago rechazado</li>
+            </ul>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Resumen</h2>
+                <ul class="list-group list-group-flush">
+                    {% for item in order.items.all %}
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>{{ item.quantity }} x {{ item.product.name }}</span>
+                        <span>{{ item.subtotal|floatformat:"2g" }} €</span>
+                    </li>
+                    {% endfor %}
+                    <li class="list-group-item d-flex justify-content-between px-0 fw-bold">
+                        <span>Total</span>
+                        <span>{{ order.total|floatformat:"2g" }} €</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ order.get_absolute_url }}" class="btn btn-outline-secondary mt-3">Pagar más tarde</a>
+{% endblock %}
