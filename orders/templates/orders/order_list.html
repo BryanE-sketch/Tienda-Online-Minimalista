@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis pedidos{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Mis pedidos</h1>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><a href="{{ order.get_absolute_url }}">#{{ order.pk }}</a></td>
+                    <td>{{ order.created_at|date:"j M Y, H:i" }}</td>
+                    <td>{{ order.get_status_display }}</td>
+                    <td class="text-end">{{ order.total|floatformat:"2g" }} €</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">Todavía no has hecho ningún pedido.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

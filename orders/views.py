@@ -1,11 +1,16 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django.views.generic import DetailView, ListView
 
 from catalog.models import Product
 
 from .cart import Cart
-from .forms import CartQuantityForm
+from .forms import CartQuantityForm, CheckoutForm
+from .models import Order
+from .services import OrderError, create_order
 
 
 def cart_detail(request):
@@ -56,3 +61,47 @@ def cart_remove(request, product_id):
     Cart(request).remove(product_id)
     messages.success(request, 'Producto eliminado del carrito.')
     return redirect('orders:cart_detail')
+
+
+@login_required
+def checkout(request):
+    cart = Cart(request)
+    if not cart.lines:
+        messages.warning(request, 'Tu carrito está vacío.')
+        return redirect('orders:cart_detail')
+
+    if request.method == 'POST':
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            try:
+                order = create_order(
+                    user=request.user,
+                    cart=cart,
+                    order=form.save(commit=False),
+                )
+            except OrderError as error:
+                messages.error(request, str(error))
+                return redirect('orders:cart_detail')
+
+            cart.clear()
+            messages.success(request, f'¡Gracias! Hemos recibido tu pedido #{order.pk}.')
+            return redirect(order)
+    else:
+        form = CheckoutForm()
+
+    return render(request, 'orders/checkout.html', {'form': form})
+
+
+class OrderListView(LoginRequiredMixin, ListView):
+    context_object_name = 'orders'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).prefetch_related('items')
+
+
+class OrderDetailView(LoginRequiredMixin, DetailView):
+    context_object_name = 'order'
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).prefetch_related('items__product')

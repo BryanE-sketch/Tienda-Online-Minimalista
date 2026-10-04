@@ -9,4 +9,7 @@ urlpatterns = [
     path('carrito/anadir/<int:product_id>/', views.cart_add, name='cart_add'),
     path('carrito/actualizar/<int:product_id>/', views.cart_update, name='cart_update'),
     path('carrito/quitar/<int:product_id>/', views.cart_remove, name='cart_remove'),
+    path('pedido/finalizar/', views.checkout, name='checkout'),
+    path('mis-pedidos/', views.OrderListView.as_view(), name='order_list'),
+    path('mis-pedidos/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
 ]

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Finalizar compra{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Finalizar compra</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Datos de envío</h2>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include 'includes/form_fields.html' %}
+                    <button type="submit" class="btn btn-dark w-100">Confirmar pedido</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Resumen</h2>
+                <ul class="list-group list-group-flush">
+                    {% for line in cart.lines %}
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>{{ line.quantity }} x {{ line.product.name }}</span>
+                        <span>{{ line.subtotal|floatformat:"2g" }} €</span>
+                    </li>
+                    {% endfor %}
+                    <li class="list-group-item d-flex justify-content-between px-0 fw-bold">
+                        <span>Total</span>
+                        <span>{{ cart.total|floatformat:"2g" }} €</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

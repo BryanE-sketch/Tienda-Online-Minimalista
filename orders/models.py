@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.urls import reverse
 
 from catalog.models import Product
 
@@ -39,6 +40,9 @@ class Order(models.Model):
 
     def __str__(self):
         return f'Pedido #{self.pk}'
+
+    def get_absolute_url(self):
+        return reverse('orders:order_detail', kwargs={'pk': self.pk})
 
     @property
     def total(self):

@@ -60,5 +60,11 @@
 <div class="alert alert-info">Tu carrito está vacío.</div>
 {% endif %}
 
-<a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Seguir comprando</a>
+<div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Seguir comprando</a>
+    {% if cart.lines %}
+    <a href="{% url 'orders:checkout' %}" class="btn btn-dark">Finalizar compra</a>
+    {% endif %}
+</div>
+
 {% endblock %}
