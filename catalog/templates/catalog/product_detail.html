@@ -26,6 +26,22 @@
 
         <p>{{ product.description|default:"Sin descripción."|linebreaksbr }}</p>
 
+        {% if product.stock > 0 %}
+        <form method="post" action="{% url 'orders:cart_add' product.pk %}"
+              class="row g-2 align-items-end mb-3">
+            {% csrf_token %}
+            <div class="col-auto">
+                <label for="id_quantity" class="form-label">Cantidad</label>
+                <input type="number" name="quantity" id="id_quantity" value="1"
+                       min="1" max="{{ product.stock }}"
+                       class="form-control" style="width: 6rem;">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-dark">Añadir al carrito</button>
+            </div>
+        </form>
+        {% endif %}
+
         <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Volver al catálogo</a>
     </div>
 </div>

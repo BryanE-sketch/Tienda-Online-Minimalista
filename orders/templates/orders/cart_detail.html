@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Carrito{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Tu carrito</h1>
+
+{% if cart.lines %}
+<div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Precio</th>
+                    <th>Cantidad</th>
+                    <th class="text-end">Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in cart.lines %}
+                <tr>
+                    <td>
+                        <a href="{{ line.product.get_absolute_url }}">{{ line.product.name }}</a>
+                    </td>
+                    <td class="text-end">{{ line.product.price|floatformat:"2g" }} €</td>
+                    <td>
+                        <form method="post" action="{% url 'orders:cart_update' line.product.pk %}"
+                              class="d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" value="{{ line.quantity }}"
+                                   min="1" max="{{ line.product.stock }}"
+                                   class="form-control form-control-sm" style="width: 5rem;"
+                                   aria-label="Cantidad">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Actualizar</button>
+                        </form>
+                    </td>
+                    <td class="text-end">{{ line.subtotal|floatformat:"2g" }} €</td>
+                    <td class="text-end">
+                        <form method="post" action="{% url 'orders:cart_remove' line.product.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Total</th>
+                    <th class="text-end">{{ cart.total|floatformat:"2g" }} €</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">Tu carrito está vacío.</div>
+{% endif %}
+
+<a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Seguir comprando</a>
+{% endblock %}
