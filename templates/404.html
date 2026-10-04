@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Página no encontrada{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">404</h1>
+    <p class="lead">La página que buscas no existe o no tienes acceso a ella.</p>
+    <a href="{% url 'catalog:product_list' %}" class="btn btn-dark">Volver a la tienda</a>
+</div>
+{% endblock %}
