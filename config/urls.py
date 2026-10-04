@@ -7,5 +7,6 @@ admin.site.index_title = 'Panel de administración'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('cuenta/', include('accounts.urls')),
     path('', include('catalog.urls')),
 ]
