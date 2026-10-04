@@ -1,9 +1,22 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
+from django.db.models import F, Sum
 from django.urls import reverse
 
 from catalog.models import Product
+
+
+class OrderQuerySet(models.QuerySet):
+    def with_total(self):
+        """Añade total_amount calculado en la base de datos."""
+        return self.annotate(
+            total_amount=Sum(
+                F('items__unit_price') * F('items__quantity'),
+                output_field=models.DecimalField(max_digits=12, decimal_places=2),
+            )
+        )
 
 
 class Order(models.Model):
@@ -13,6 +26,21 @@ class Order(models.Model):
         SHIPPED = 'shipped', 'Enviado'
         DELIVERED = 'delivered', 'Entregado'
         CANCELLED = 'cancelled', 'Cancelado'
+
+    ALLOWED_TRANSITIONS = {
+        Status.PENDING: [Status.PAID, Status.CANCELLED],
+        Status.PAID: [Status.SHIPPED, Status.CANCELLED],
+        Status.SHIPPED: [Status.DELIVERED],
+        Status.DELIVERED: [],
+        Status.CANCELLED: [],
+    }
+    STATUS_COLORS = {
+        Status.PENDING: 'warning',
+        Status.PAID: 'info',
+        Status.SHIPPED: 'primary',
+        Status.DELIVERED: 'success',
+        Status.CANCELLED: 'secondary',
+    }
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -33,6 +61,8 @@ class Order(models.Model):
     created_at = models.DateTimeField('creado', auto_now_add=True)
     updated_at = models.DateTimeField('actualizado', auto_now=True)
 
+    objects = OrderQuerySet.as_manager()
+
     class Meta:
         verbose_name = 'pedido'
         verbose_name_plural = 'pedidos'
@@ -47,6 +77,33 @@ class Order(models.Model):
     @property
     def total(self):
         return sum(item.subtotal for item in self.items.all())
+
+    @property
+    def next_statuses(self):
+        return self.ALLOWED_TRANSITIONS[self.status]
+
+    @property
+    def status_color(self):
+        return self.STATUS_COLORS[self.status]
+
+    @transaction.atomic
+    def change_status(self, new_status):
+        """Cambia el estado si la transición es válida; al cancelar devuelve el stock."""
+        current = Order.objects.select_for_update().get(pk=self.pk)
+        if new_status not in self.ALLOWED_TRANSITIONS[current.status]:
+            raise ValidationError(
+                f'Un pedido «{current.get_status_display()}» no puede pasar a '
+                f'«{self.Status(new_status).label}».'
+            )
+
+        if new_status == self.Status.CANCELLED:
+            for item in current.items.all():
+                Product.objects.filter(pk=item.product_id).update(
+                    stock=F('stock') + item.quantity
+                )
+
+        self.status = new_status
+        self.save(update_fields=['status', 'updated_at'])
 
 
 class OrderItem(models.Model):

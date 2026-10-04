@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models import DecimalField, F, Sum
 
 from .models import Order, OrderItem
 
@@ -7,7 +6,12 @@ from .models import Order, OrderItem
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    autocomplete_fields = ['product']
+    fields = ['product', 'unit_price', 'quantity']
+    readonly_fields = fields
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Order)
@@ -17,18 +21,18 @@ class OrderAdmin(admin.ModelAdmin):
     list_select_related = ['user']
     search_fields = ['id', 'full_name', 'user__username', 'user__email']
     date_hierarchy = 'created_at'
-    autocomplete_fields = ['user']
+    readonly_fields = ['user', 'status']
     inlines = [OrderItemInline]
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        return queryset.annotate(
-            _total=Sum(
-                F('items__unit_price') * F('items__quantity'),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            )
-        )
+        return super().get_queryset(request).with_total()
 
-    @admin.display(description='total', ordering='_total')
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description='total', ordering='total_amount')
     def total_display(self, obj):
-        return f'{obj._total or 0:.2f} €'
+        return f'{obj.total_amount or 0:.2f} €'

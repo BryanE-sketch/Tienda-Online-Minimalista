@@ -12,4 +12,15 @@ urlpatterns = [
     path('pedido/finalizar/', views.checkout, name='checkout'),
     path('mis-pedidos/', views.OrderListView.as_view(), name='order_list'),
     path('mis-pedidos/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
+    path('gestion/pedidos/', views.ManageOrderListView.as_view(), name='manage_order_list'),
+    path(
+        'gestion/pedidos/<int:pk>/',
+        views.ManageOrderDetailView.as_view(),
+        name='manage_order_detail',
+    ),
+    path(
+        'gestion/pedidos/<int:pk>/estado/',
+        views.ManageOrderStatusView.as_view(),
+        name='manage_order_status',
+    ),
 ]

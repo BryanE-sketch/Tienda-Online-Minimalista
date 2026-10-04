@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Pedido #{{ order.pk }}{% endblock %}
+{% block title %}Gestión del pedido #{{ order.pk }}{% endblock %}
 
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Pedido #{{ order.pk }}</h1>
-      <span class="badge text-bg-{{ order.status_color }} fs-6">{{ order.get_status_display }}</span>
+    <span class="badge text-bg-{{ order.status_color }} fs-6">{{ order.get_status_display }}</span>
 </div>
 
 <div class="row g-4">
@@ -41,18 +41,45 @@
             </div>
         </div>
     </div>
+
     <div class="col-12 col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h5">Cambiar estado</h2>
+                {% for status in order.next_statuses %}
+                <form method="post" action="{% url 'orders:manage_order_status' order.pk %}" class="mb-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="{{ status.value }}">
+                    {% if status.value == 'cancelled' %}
+                    <button type="submit" class="btn btn-outline-danger w-100"
+                            onclick="return confirm('¿Cancelar el pedido y devolver el stock?');">
+                        Cancelar pedido
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-dark w-100">Marcar como {{ status.label|lower }}</button>
+                    {% endif %}
+                </form>
+                {% empty %}
+                <p class="text-muted mb-0">Este pedido ya no admite cambios de estado.</p>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="card shadow-sm">
             <div class="card-body">
-                <h2 class="h5">Envío</h2>
-                <p class="mb-1">{{ order.full_name }}</p>
+                <h2 class="h5">Cliente y envío</h2>
+                <p class="mb-1">{{ order.full_name }} ({{ order.user.username }})</p>
+                <p class="mb-1">{{ order.user.email }}</p>
                 <p class="mb-1">{{ order.address }}</p>
                 <p class="mb-3">{{ order.postal_code }} {{ order.city }}</p>
-                <p class="text-muted small mb-0">Realizado el {{ order.created_at|date:"j M Y, H:i" }}</p>
+                <p class="text-muted small mb-0">
+                    Creado el {{ order.created_at|date:"j M Y, H:i" }}<br>
+                    Actualizado el {{ order.updated_at|date:"j M Y, H:i" }}
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary mt-3">Volver a mis pedidos</a>
+<a href="{% url 'orders:manage_order_list' %}" class="btn btn-outline-secondary mt-3">Volver a la gestión</a>
 {% endblock %}

@@ -1,16 +1,20 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views import View
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 
 from catalog.models import Product
 
 from .cart import Cart
-from .forms import CartQuantityForm, CheckoutForm
+from .forms import CartQuantityForm, CheckoutForm, OrderFilterForm, OrderStatusForm
 from .models import Order
 from .services import OrderError, create_order
+
 
 
 def cart_detail(request):
@@ -105,3 +109,66 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user).prefetch_related('items__product')
+    
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Solo el personal: sin sesión va al acceso; un cliente recibe 403."""
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+
+class ManageOrderListView(StaffRequiredMixin, ListView):
+    template_name = 'orders/manage_order_list.html'
+    context_object_name = 'orders'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = Order.objects.with_total().select_related('user')
+        self.form = OrderFilterForm(self.request.GET)
+
+        if self.form.is_valid():
+            q = self.form.cleaned_data['q']
+            status = self.form.cleaned_data['status']
+
+            if q:
+                filters = Q(full_name__icontains=q) | Q(user__username__icontains=q)
+                if q.isdigit():
+                    filters |= Q(pk=int(q))
+                queryset = queryset.filter(filters)
+            if status:
+                queryset = queryset.filter(status=status)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = self.form
+        return context
+
+
+class ManageOrderDetailView(StaffRequiredMixin, DetailView):
+    template_name = 'orders/manage_order_detail.html'
+    context_object_name = 'order'
+    queryset = Order.objects.select_related('user').prefetch_related('items__product')
+
+
+class ManageOrderStatusView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        form = OrderStatusForm(request.POST)
+
+        if not form.is_valid():
+            messages.error(request, 'El estado no es válido.')
+        else:
+            try:
+                order.change_status(form.cleaned_data['status'])
+            except ValidationError as error:
+                messages.error(request, error.message)
+            else:
+                messages.success(
+                    request,
+                    f'Pedido #{order.pk} marcado como «{order.get_status_display()}».',
+                )
+
+        return redirect('orders:manage_order_detail', pk=order.pk)

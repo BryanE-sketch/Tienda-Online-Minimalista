@@ -19,3 +19,20 @@ class CheckoutForm(BootstrapFormMixin, forms.ModelForm):
         if not (postal_code.isdigit() and len(postal_code) == 5):
             raise forms.ValidationError('El código postal debe tener 5 dígitos.')
         return postal_code
+
+
+class OrderFilterForm(BootstrapFormMixin, forms.Form):
+    q = forms.CharField(
+        label='Buscar',
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Nº de pedido, nombre o usuario'}),
+    )
+    status = forms.ChoiceField(
+        label='Estado',
+        required=False,
+        choices=[('', 'Todos los estados'), *Order.Status.choices],
+    )
+
+
+class OrderStatusForm(forms.Form):
+    status = forms.ChoiceField(choices=Order.Status.choices)
