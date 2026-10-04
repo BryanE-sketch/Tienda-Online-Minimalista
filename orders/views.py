@@ -124,7 +124,9 @@ class ManageOrderListView(StaffRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Order.objects.with_total().select_related('user')
+        queryset = (
+            Order.objects.with_total().select_related('user').order_by('-created_at')
+        )
         self.form = OrderFilterForm(self.request.GET)
 
         if self.form.is_valid():

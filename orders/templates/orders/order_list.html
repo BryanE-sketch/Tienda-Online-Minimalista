@@ -21,7 +21,7 @@
                 <tr>
                     <td><a href="{{ order.get_absolute_url }}">#{{ order.pk }}</a></td>
                     <td>{{ order.created_at|date:"j M Y, H:i" }}</td>
-                    <td>{{ order.get_status_display }}</td>
+                    <td><span class="badge text-bg-{{ order.status_color }}">{{ order.get_status_display }}</span></td>
                     <td class="text-end">{{ order.total|floatformat:"2g" }} €</td>
                 </tr>
                 {% empty %}
